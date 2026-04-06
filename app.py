@@ -1,31 +1,54 @@
 import streamlit as st
 import base64
 
-st.set_page_config(page_title="Scorpion AI - Talking Humanoid", layout="wide")
+st.set_page_config(page_title="SCORPION AI - TALKING HUMANOID", layout="wide")
 
 # ----------------------------------------------------------------------
-# Authentication
+# Authentication with fallback (no KeyError)
 # ----------------------------------------------------------------------
+def get_expected_password():
+    try:
+        return st.secrets["password"]
+    except KeyError:
+        # Fallback to default password if secret is missing
+        return "20082010"
+
 def check_password():
     def password_entered():
-        if st.session_state["password"] == st.secrets["password"]:
+        if st.session_state["password"] == get_expected_password():
             st.session_state["authenticated"] = True
             del st.session_state["password"]
         else:
             st.session_state["authenticated"] = False
 
     if "authenticated" not in st.session_state:
-        st.text_input("🔐 Enter password to unlock Scorpion AI", type="password", on_change=password_entered, key="password")
+        # Show login screen with Haitian flag and title
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col1:
+            st.image("https://flagcdn.com/w320/ht.png", width=100)
+        with col2:
+            st.markdown("<h1 style='text-align: center;'>SCORPION AI</h1>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center;'><em>Talking Humanoid</em></p>", unsafe_allow_html=True)
+        with col3:
+            st.markdown("""
+            <div style='text-align: right;'>
+                <b>GlobalInternet.py</b><br>
+                Gesner Deslandes<br>
+                Python Developer
+            </div>
+            """, unsafe_allow_html=True)
+        st.divider()
+        st.text_input("🔐 Enter password to unlock", type="password", on_change=password_entered, key="password")
         return False
     elif not st.session_state["authenticated"]:
-        st.text_input("🔐 Enter password to unlock Scorpion AI", type="password", on_change=password_entered, key="password")
+        st.text_input("🔐 Enter password to unlock", type="password", on_change=password_entered, key="password")
         st.error("Wrong password. Access denied.")
         return False
     else:
         return True
 
 # ----------------------------------------------------------------------
-# Avatar SVG (static, no animation)
+# Avatar SVG
 # ----------------------------------------------------------------------
 svg_avatar = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
   <rect width="400" height="400" fill="url(#haitiGradient)" rx="20"/>
@@ -76,8 +99,26 @@ demo_qa = [
 if not check_password():
     st.stop()
 
+# After login, show main interface with flag and title again
+col1, col2, col3 = st.columns([1, 2, 1])
+with col1:
+    st.image("https://flagcdn.com/w320/ht.png", width=100)
+with col2:
+    st.markdown("<h1 style='text-align: center;'>SCORPION AI</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center;'><em>Talking Humanoid</em></p>", unsafe_allow_html=True)
+with col3:
+    st.markdown("""
+    <div style='text-align: right;'>
+        <b>GlobalInternet.py</b><br>
+        Gesner Deslandes<br>
+        Python Developer
+    </div>
+    """, unsafe_allow_html=True)
+st.divider()
+
+# Sidebar
 st.sidebar.image("https://flagcdn.com/w320/ht.png", width=100)
-st.sidebar.title("Scorpion AI")
+st.sidebar.title("SCORPION AI")
 st.sidebar.markdown("**GlobalInternet.py**")
 st.sidebar.markdown("Owner: Gesner Deslandes")
 st.sidebar.markdown("📧 deslndes78@gmail.com | 📞 (509) 4738-5663")
