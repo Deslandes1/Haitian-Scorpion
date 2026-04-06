@@ -1,1 +1,2 @@
 streamlit>=1.29.0
+gtts>=2.2.0
