@@ -1,11 +1,5 @@
 import streamlit as st
-import openai
-import speech_recognition as sr
-import pyttsx3
-import threading
 import base64
-import time
-from streamlit_mic_recorder import mic_recorder
 
 # ----------------------------------------------------------------------
 # Page config
@@ -32,24 +26,6 @@ def check_password():
         return False
     else:
         return True
-
-# ----------------------------------------------------------------------
-# OpenAI setup (only used if demo mode is off)
-# ----------------------------------------------------------------------
-def get_ai_response(prompt, language):
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": f"You are Scorpion, a helpful AI assistant. You speak {language}. Respond concisely and clearly."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=500,
-            temperature=0.7
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"Sorry, I encountered an error: {str(e)}"
 
 # ----------------------------------------------------------------------
 # Avatar with lip movement (SVG)
@@ -110,19 +86,6 @@ closed_uri = get_avatar_data_uri(svg_closed)
 open_uri = get_avatar_data_uri(svg_open)
 
 # ----------------------------------------------------------------------
-# Text-to-Speech (TTS) using pyttsx3 (male voice)
-# ----------------------------------------------------------------------
-def speak_text(text):
-    engine = pyttsx3.init()
-    voices = engine.getProperty('voices')
-    for voice in voices:
-        if 'male' in voice.name.lower():
-            engine.setProperty('voice', voice.id)
-            break
-    engine.say(text)
-    engine.runAndWait()
-
-# ----------------------------------------------------------------------
 # Demo questions and answers
 # ----------------------------------------------------------------------
 demo_qa = [
@@ -146,17 +109,14 @@ demo_qa = [
 if not check_password():
     st.stop()
 
-# Sidebar settings
+# Sidebar
 st.sidebar.image("https://flagcdn.com/w320/ht.png", width=100)
 st.sidebar.title("Scorpion AI")
 st.sidebar.markdown("**GlobalInternet.py**")
 st.sidebar.markdown("Owner: Gesner Deslandes")
 st.sidebar.markdown("📧 deslndes78@gmail.com | 📞 (509) 4738-5663")
 st.sidebar.markdown("---")
-
-# Demo mode toggle
-demo_mode = st.sidebar.checkbox("🎮 Demo Mode (use pre‑defined questions)")
-language = st.sidebar.selectbox("Select Language", ["English", "French", "Spanish"], disabled=demo_mode)
+st.sidebar.info("💡 Demo Mode: Click any question button to see Scorpion's answer and watch his lips move.")
 
 # Main area
 col1, col2 = st.columns([1, 2])
@@ -164,90 +124,45 @@ col1, col2 = st.columns([1, 2])
 with col1:
     st.markdown(f'<div class="avatar-container"><img src="{closed_uri}" id="avatar" style="width:100%; max-width:400px;"></div>', unsafe_allow_html=True)
     
-    if demo_mode:
-        st.subheader("📋 Example Questions")
-        for i, (question, answer) in enumerate(demo_qa):
-            if st.button(f"{i+1}. {question}", key=f"demo_q_{i}"):
-                st.markdown(f"**You asked:** {question}")
-                st.markdown(f"**Scorpion:** {answer}")
-                # Animate avatar and speak answer
-                st.markdown(f"""
-                <script>
-                    const avatar = document.getElementById('avatar');
-                    const closed = "{closed_uri}";
-                    const open = "{open_uri}";
-                    let isOpen = false;
-                    const interval = setInterval(() => {{
-                        if (avatar) {{
-                            avatar.src = isOpen ? closed : open;
-                            isOpen = !isOpen;
-                        }}
-                    }}, 200);
-                    setTimeout(() => {{
-                        clearInterval(interval);
-                        if (avatar) avatar.src = closed;
-                    }}, 5000);
-                </script>
-                """, unsafe_allow_html=True)
-                speak_text(answer)
-    else:
-        if st.button("🎙️ Start Voice Interaction"):
-            st.write("Listening... Please speak clearly.")
-            try:
-                audio = mic_recorder(start_prompt="", stop_prompt="", key='recorder')
-                if audio:
-                    recognizer = sr.Recognizer()
-                    text = recognizer.recognize_google(audio)
-                    st.write(f"**You said:** {text}")
-                    with st.spinner("Thinking..."):
-                        response = get_ai_response(text, language)
-                        st.write(f"**Scorpion:** {response}")
-                        st.markdown(f"""
-                        <script>
-                            const avatar = document.getElementById('avatar');
-                            const closed = "{closed_uri}";
-                            const open = "{open_uri}";
-                            let isOpen = false;
-                            const interval = setInterval(() => {{
-                                if (avatar) {{
-                                    avatar.src = isOpen ? closed : open;
-                                    isOpen = !isOpen;
-                                }}
-                            }}, 200);
-                            setTimeout(() => {{
-                                clearInterval(interval);
-                                if (avatar) avatar.src = closed;
-                            }}, 5000);
-                        </script>
-                        """, unsafe_allow_html=True)
-                        speak_text(response)
-                else:
-                    st.warning("No audio captured. Please try again.")
-            except Exception as e:
-                st.error(f"Error: {str(e)}")
+    st.subheader("📋 Example Questions")
+    for i, (question, answer) in enumerate(demo_qa):
+        if st.button(f"{i+1}. {question}", key=f"demo_q_{i}"):
+            st.markdown(f"**You asked:** {question}")
+            st.markdown(f"**Scorpion:** {answer}")
+            # Animate avatar (mouth moves)
+            st.markdown(f"""
+            <script>
+                const avatar = document.getElementById('avatar');
+                const closed = "{closed_uri}";
+                const open = "{open_uri}";
+                let isOpen = false;
+                const interval = setInterval(() => {{
+                    if (avatar) {{
+                        avatar.src = isOpen ? closed : open;
+                        isOpen = !isOpen;
+                    }}
+                }}, 200);
+                setTimeout(() => {{
+                    clearInterval(interval);
+                    if (avatar) avatar.src = closed;
+                }}, 5000);
+            </script>
+            """, unsafe_allow_html=True)
 
 with col2:
     st.markdown("### How to use")
-    if demo_mode:
-        st.markdown("""
-        - **Demo Mode** is active. Click any question button below to hear Scorpion's answer.
-        - The avatar's mouth will move while Scorpion speaks.
-        - This mode does not require an internet connection or OpenAI API key.
-        - To use live voice interaction, turn off Demo Mode in the sidebar.
-        """)
-    else:
-        st.markdown("""
-        1. Click the **Start Voice Interaction** button.
-        2. Speak clearly into your microphone.
-        3. Scorpion will transcribe your speech, generate an AI response, and speak back.
-        4. The avatar's mouth will move while Scorpion is talking.
-        """)
+    st.markdown("""
+    - **Click any question button** on the left.
+    - Scorpion will display the answer and his lips will move for 5 seconds, as if he is talking.
+    - This demo mode showcases the knowledge Scorpion has about GlobalInternet.py.
+    - For live voice interaction, an upgraded version is available (contact us).
+    """)
     st.markdown("---")
     st.markdown("### Teaching AI")
     st.markdown("""
-    - **Ask questions** about AI, machine learning, or any topic.
-    - **Learn English, French, or Spanish** – Scorpion will respond in your chosen language.
-    - **Practice conversations** and improve your language skills.
+    - Scorpion can teach you about AI, Python, software development, and more.
+    - Use the demo questions to learn about our company and services.
+    - Contact us to integrate real voice interaction and AI responses.
     """)
 
 st.markdown("---")
